@@ -45,7 +45,6 @@ input {
 
 .toggle-link { margin-top: 15px; cursor: pointer; font-size: 13px; }
 .toggle-link span { color: #4f46e5; font-weight: bold; }
-.hidden { display: none; }
 
 /* Dashboard Styles */
 #dashboard-section { color: white; }
@@ -80,4 +79,7 @@ header { display: flex; justify-content: space-between; padding: 10px 0 20px 0; 
 }
 .modal-content h3 { margin-bottom: 15px; }
 .modal-content input { border: 1px solid #ddd; }
-    
+
+/* .hidden ko sabse last me rakha, taaki yeh hamesha .modal jaise
+   kisi bhi 'display' set karne wali class ko override kar sake */
+.hidden { display: none !important; }
