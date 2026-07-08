@@ -1,8 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, query, where, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// --- Firebase Config ---
 const firebaseConfig = {
     apiKey: "AIzaSyCzsLxPKdhRpdiy-5tUfDaoyDJzhXP8Kj8",
     authDomain: "digitalkhatapro-b0400.firebaseapp.com",
@@ -16,9 +15,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// customers ko yaha cache karke rakhenge, taaki search aur totals
-// bina baar baar Firestore query kiye calculate ho sakein
 let allCustomers = [];
+let currentCustomerId = null;
+let currentTrxType = null; // 'credit' या 'payment'
+let trxUnsubscribe = null; // Transaction listener ko rokne ke liye
 
 // --- UI Toggle Functions ---
 window.showSignup = () => {
@@ -31,9 +31,14 @@ window.showLogin = () => {
     document.getElementById('login-section').classList.remove('hidden');
 };
 
-// Modal functions
 window.openModal = () => document.getElementById('add-customer-modal').classList.remove('hidden');
 window.closeModal = () => document.getElementById('add-customer-modal').classList.add('hidden');
+
+window.closeTrxModal = () => {
+    document.getElementById('transaction-modal').classList.add('hidden');
+    document.getElementById('trx-amount').value = '';
+    document.getElementById('trx-note').value = '';
+}
 
 // --- Auth Logic ---
 document.getElementById('signup-form').addEventListener('submit', async (e) => {
@@ -44,8 +49,6 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     const pin = document.getElementById('signup-pin').value;
     const email = `${phone}@digitalkhata.com`;
 
-    // PIN hamesha exactly 4 digit ka hona chahiye (number field me leading
-    // zero jaise "0512" ki value "512" ban jaati hai, isliye string length check zaroori hai)
     if (!/^\d{4}$/.test(pin)) {
         alert("Recovery PIN exactly 4 digit ka hona chahiye!");
         return;
@@ -70,21 +73,16 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 
 // --- Stats Logic ---
 const updateStats = () => {
-    const totalDue = allCustomers.reduce((sum, c) => sum + Number(c.due || 0), 0);
+    let totalDue = 0;
+    let totalAdvance = 0;
 
-    const today = new Date();
-    const todayCollection = allCustomers.reduce((sum, c) => {
-        if (c.lastPaymentDate) {
-            const paidOn = c.lastPaymentDate.toDate ? c.lastPaymentDate.toDate() : new Date(c.lastPaymentDate);
-            if (paidOn.toDateString() === today.toDateString()) {
-                sum += Number(c.lastPaymentAmount || 0);
-            }
-        }
-        return sum;
-    }, 0);
+    allCustomers.forEach(c => {
+        if (c.balance > 0) totalDue += c.balance;
+        else if (c.balance < 0) totalAdvance += Math.abs(c.balance);
+    });
 
     document.getElementById('total-due').innerText = `₹${totalDue}`;
-    document.getElementById('today-collection').innerText = `₹${todayCollection}`;
+    document.getElementById('total-advance').innerText = `₹${totalAdvance}`;
 };
 
 // --- Customer Render Logic ---
@@ -92,83 +90,206 @@ const renderCustomers = (customers) => {
     const list = document.getElementById('customer-list');
     list.innerHTML = '';
     customers.forEach((data) => {
+        // Left me Amount, Right me Name aur Number
+        let amountHtml = '';
+        if (data.balance > 0) {
+            amountHtml = `<span style="color:#ef4444; font-weight:bold; font-size:18px;">₹${data.balance}</span><br><small style="color:#ef4444;">बाकी</small>`;
+        } else if (data.balance < 0) {
+            amountHtml = `<span style="color:#10b981; font-weight:bold; font-size:18px;">ADV ₹${Math.abs(data.balance)}</span><br><small style="color:#10b981;">जमा है</small>`;
+        } else {
+            amountHtml = `<span style="color:#6b7280; font-weight:bold; font-size:18px;">₹0</span>`;
+        }
+
         list.innerHTML += `
-            <div class="cust-item" style="background:white; color:black; padding:15px; margin:10px 0; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-                <span>${data.name}</span>
-                <span style="display:flex; align-items:center; gap:10px;">
-                    <span style="font-weight:bold; color:#e11d48;">₹${data.due}</span>
-                    <button class="collect-btn" data-id="${data.id}" data-due="${data.due}" style="background:#10b981; color:white; border:none; border-radius:6px; padding:5px 10px; cursor:pointer;">Collect</button>
-                </span>
+            <div class="cust-item" onclick="openCustomerDetail('${data.id}')">
+                <div class="left-amount">${amountHtml}</div>
+                <div class="right-info">
+                    <strong>${data.name}</strong>
+                    <p>${data.phone}</p>
+                </div>
             </div>
         `;
     });
+};
 
-    // Collect button ke liye event listeners (innerHTML dobara likhne ke baad har baar attach karne padte hain)
-    document.querySelectorAll('.collect-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const custId = btn.dataset.id;
-            const currentDue = Number(btn.dataset.due);
-            const amountStr = prompt("Kitni rashi jama karni hai?");
-            if (amountStr === null) return;
-            const amount = Number(amountStr);
-            if (!amount || amount <= 0) { alert("Sahi amount daalein!"); return; }
+// --- Customer Detail & Transaction Logic ---
+window.openCustomerDetail = (custId) => {
+    currentCustomerId = custId;
+    const customer = allCustomers.find(c => c.id === custId);
+    
+    document.getElementById('dashboard-section').classList.add('hidden');
+    document.getElementById('customer-detail-section').classList.remove('hidden');
+    
+    document.getElementById('detail-cust-name').innerText = customer.name;
+    updateCustomerDetailUI(customer.balance);
+    
+    loadTransactions(custId);
+};
 
-            const newDue = Math.max(0, currentDue - amount);
-            try {
-                await updateDoc(doc(db, "customers", custId), {
-                    due: newDue,
-                    lastPaymentAmount: amount,
-                    lastPaymentDate: new Date()
-                });
-            } catch (err) { alert("Payment update karne me error aayi!"); }
+const updateCustomerDetailUI = (balance) => {
+    const balanceEl = document.getElementById('detail-balance');
+    const statusEl = document.getElementById('detail-status');
+    
+    if (balance > 0) {
+        balanceEl.innerText = `₹${balance}`;
+        balanceEl.style.color = "#ef4444";
+        statusEl.innerText = "ग्राहक को देने हैं (बाकी)";
+    } else if (balance < 0) {
+        balanceEl.innerText = `₹${Math.abs(balance)}`;
+        balanceEl.style.color = "#10b981";
+        statusEl.innerText = "एडवांस जमा है (ADV)";
+    } else {
+        balanceEl.innerText = `₹0`;
+        balanceEl.style.color = "#1f2937";
+        statusEl.innerText = "कोई हिसाब बाकी नहीं";
+    }
+};
+
+document.getElementById('back-btn').addEventListener('click', () => {
+    document.getElementById('customer-detail-section').classList.add('hidden');
+    document.getElementById('dashboard-section').classList.remove('hidden');
+    if (trxUnsubscribe) trxUnsubscribe(); // Purane listener ko band karna
+});
+
+// Transaction Modal Openers
+document.getElementById('btn-give-credit').addEventListener('click', () => {
+    currentTrxType = 'credit';
+    document.getElementById('trx-modal-title').innerText = "उधार दें (Credit)";
+    document.getElementById('transaction-modal').classList.remove('hidden');
+});
+
+document.getElementById('btn-receive-payment').addEventListener('click', () => {
+    currentTrxType = 'payment';
+    document.getElementById('trx-modal-title').innerText = "पैसे लें (Payment)";
+    document.getElementById('transaction-modal').classList.remove('hidden');
+});
+
+// Save Transaction
+document.getElementById('save-trx-btn').addEventListener('click', async () => {
+    const amount = Number(document.getElementById('trx-amount').value);
+    const note = document.getElementById('trx-note').value;
+
+    if (!amount || amount <= 0) { alert("Sahi amount daalein!"); return; }
+
+    const customer = allCustomers.find(c => c.id === currentCustomerId);
+    let newBalance = customer.balance || 0;
+
+    // Logic: Credit = balance badhega, Payment = balance ghatega
+    if (currentTrxType === 'credit') {
+        newBalance += amount;
+    } else {
+        newBalance -= amount;
+    }
+
+    try {
+        // 1. Transaction history me add karein
+        await addDoc(collection(db, `customers/${currentCustomerId}/transactions`), {
+            amount: amount,
+            type: currentTrxType,
+            note: note,
+            date: new Date()
+        });
+
+        // 2. Customer ka main balance update karein
+        await updateDoc(doc(db, "customers", currentCustomerId), {
+            balance: newBalance
+        });
+
+        closeTrxModal();
+    } catch (err) { alert("Transaction save karne me error aayi!"); }
+});
+
+const loadTransactions = (custId) => {
+    const q = query(collection(db, `customers/${custId}/transactions`), orderBy("date", "desc"));
+    
+    if (trxUnsubscribe) trxUnsubscribe(); 
+
+    trxUnsubscribe = onSnapshot(q, (snapshot) => {
+        const list = document.getElementById('transaction-list');
+        list.innerHTML = '';
+        
+        if(snapshot.empty) {
+            list.innerHTML = '<p style="text-align:center; color:#6b7280;">No transactions yet.</p>';
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            const dateStr = data.date.toDate ? data.date.toDate().toLocaleString('en-IN') : new Date(data.date).toLocaleString('en-IN');
+            
+            const isCredit = data.type === 'credit';
+            const color = isCredit ? '#ef4444' : '#10b981';
+            const sign = isCredit ? '+' : '-';
+            const title = isCredit ? 'उधार दिया' : 'पैसे मिले';
+
+            list.innerHTML += `
+                <div class="trx-item">
+                    <div class="trx-details">
+                        <strong>${title}</strong>
+                        <p class="trx-date">${dateStr}</p>
+                        ${data.note ? `<p class="trx-note">📝 ${data.note}</p>` : ''}
+                    </div>
+                    <div class="trx-amount" style="color:${color}; font-weight:bold;">
+                        ${sign}₹${data.amount}
+                    </div>
+                </div>
+            `;
         });
     });
 };
 
-// --- Customer Logic ---
-const loadCustomers = (uid) => {
-    const q = query(collection(db, "customers"), where("shopId", "==", uid));
-    onSnapshot(q, (snapshot) => {
-        allCustomers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderCustomers(allCustomers);
-        updateStats();
-    });
-};
-
-// --- Search Logic ---
-document.getElementById('search-customer').addEventListener('input', (e) => {
-    const term = e.target.value.trim().toLowerCase();
-    const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term));
-    renderCustomers(filtered);
-});
-
+// --- Add New Customer Logic ---
 document.getElementById('add-cust-btn').addEventListener('click', openModal);
 
 document.getElementById('save-cust-btn').addEventListener('click', async () => {
     const name = document.getElementById('cust-name').value;
-    const due = document.getElementById('cust-due').value;
+    const phone = document.getElementById('cust-phone').value; // Ab Amount ki jagah Phone lega
 
-    if(!name || !due) { alert("Please fill all details!"); return; }
+    if(!name || !phone) { alert("Please fill all details!"); return; }
 
     try {
         await addDoc(collection(db, "customers"), {
             shopId: auth.currentUser.uid,
             name: name,
-            due: Number(due), // string ki jagah number save karna zaroori, warna total galat aayega
+            phone: phone,
+            balance: 0, // Naya customer, toh balance 0
             date: new Date()
         });
-        alert("Customer added successfully!");
         closeModal();
         document.getElementById('cust-name').value = '';
-        document.getElementById('cust-due').value = '';
+        document.getElementById('cust-phone').value = '';
     } catch (e) { alert("Error adding customer!"); }
 });
 
-// --- Dashboard Logic ---
+// --- Search & Load Customers Logic ---
+const loadCustomers = (uid) => {
+    const q = query(collection(db, "customers"), where("shopId", "==", uid));
+    onSnapshot(q, (snapshot) => {
+        allCustomers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        // Agar detail page khula hai toh waha ka balance bhi live update ho
+        if(currentCustomerId && !document.getElementById('customer-detail-section').classList.contains('hidden')){
+            const updatedCust = allCustomers.find(c => c.id === currentCustomerId);
+            if(updatedCust) updateCustomerDetailUI(updatedCust.balance);
+        }
+
+        renderCustomers(allCustomers);
+        updateStats();
+    });
+};
+
+document.getElementById('search-customer').addEventListener('input', (e) => {
+    const term = e.target.value.trim().toLowerCase();
+    const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+    renderCustomers(filtered);
+});
+
+// --- Initialization Logic ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('login-section').classList.add('hidden');
         document.getElementById('signup-section').classList.add('hidden');
+        document.getElementById('customer-detail-section').classList.add('hidden');
         document.getElementById('dashboard-section').classList.remove('hidden');
 
         const shopDoc = await getDoc(doc(db, "shops", user.uid));
@@ -178,9 +299,10 @@ onAuthStateChanged(auth, async (user) => {
         loadCustomers(user.uid);
     } else {
         document.getElementById('dashboard-section').classList.add('hidden');
+        document.getElementById('customer-detail-section').classList.add('hidden');
         document.getElementById('login-section').classList.remove('hidden');
     }
 });
 
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-        
+                                                                  
