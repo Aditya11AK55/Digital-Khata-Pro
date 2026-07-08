@@ -1,15 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 🚀 Add your Firebase Config here
+// --- Firebase Config ---
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCzsLxPKdhRpdiy-5tUfDaoyDJzhXP8Kj8",
+    authDomain: "digitalkhatapro-b0400.firebaseapp.com",
+    projectId: "digitalkhatapro-b0400",
+    storageBucket: "digitalkhatapro-b0400.appspot.com",
+    messagingSenderId: "320481964196",
+    appId: "1:320481964196:web:960fef49b099107d92f631"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -26,6 +26,10 @@ window.showLogin = () => {
     document.getElementById('signup-section').classList.add('hidden');
     document.getElementById('login-section').classList.remove('hidden');
 };
+
+// Modal functions
+window.openModal = () => document.getElementById('add-customer-modal').classList.remove('hidden');
+window.closeModal = () => document.getElementById('add-customer-modal').classList.add('hidden');
 
 // --- Auth Logic ---
 document.getElementById('signup-form').addEventListener('submit', async (e) => {
@@ -51,6 +55,29 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     try {
         await signInWithEmailAndPassword(auth, `${phone}@digitalkhata.com`, password);
     } catch (err) { alert("Invalid mobile number or password!"); }
+});
+
+// --- Customer Logic ---
+document.getElementById('add-cust-btn').addEventListener('click', openModal);
+
+document.getElementById('save-cust-btn').addEventListener('click', async () => {
+    const name = document.getElementById('cust-name').value;
+    const due = document.getElementById('cust-due').value;
+    
+    if(!name || !due) { alert("Please fill all details!"); return; }
+
+    try {
+        await addDoc(collection(db, "customers"), {
+            shopId: auth.currentUser.uid,
+            name: name,
+            due: due,
+            date: new Date()
+        });
+        alert("Customer added successfully!");
+        closeModal();
+        document.getElementById('cust-name').value = '';
+        document.getElementById('cust-due').value = '';
+    } catch (e) { alert("Error adding customer!"); }
 });
 
 // --- Dashboard Logic ---
