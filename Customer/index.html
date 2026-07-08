@@ -10,6 +10,7 @@
 <body>
 
     <div class="main-container">
+        
         <div id="login-section" class="auth-card">
             <h2>Welcome Back</h2>
             <p>अपने खाते में लॉगिन करें</p>
@@ -33,6 +34,32 @@
             </form>
             <p class="toggle-link" onclick="showLogin()">पहले से अकाउंट है? <span>लॉगिन करें</span></p>
         </div>
+
+        <div id="dashboard-section" class="hidden">
+            <header>
+                <h3 id="shop-name-display">मेरी दुकान</h3>
+                <button id="logout-btn">Logout</button>
+            </header>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <p>कुल बाकी (Due)</p>
+                    <h2 id="total-due">₹0</h2>
+                </div>
+                <div class="stat-card">
+                    <p>आज की वसूली</p>
+                    <h2 id="today-collection">₹0</h2>
+                </div>
+            </div>
+
+            <input type="text" id="search-customer" placeholder="कस्टमर खोजें...">
+            
+            <div id="customer-list">
+                </div>
+
+            <button id="add-cust-btn" class="fab">+</button>
+        </div>
+
     </div>
 
     <script src="app.js" type="module"></script>
