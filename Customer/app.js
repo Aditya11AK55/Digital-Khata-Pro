@@ -17,8 +17,8 @@ const db = getFirestore(app);
 
 let allCustomers = [];
 let currentCustomerId = null;
-let currentTrxType = null; // 'credit' या 'payment'
-let trxUnsubscribe = null; // Transaction listener ko rokne ke liye
+let currentTrxType = null; 
+let trxUnsubscribe = null; 
 
 // --- UI Toggle Functions ---
 window.showSignup = () => {
@@ -50,7 +50,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     const email = `${phone}@digitalkhata.com`;
 
     if (!/^\d{4}$/.test(pin)) {
-        alert("Recovery PIN exactly 4 digit ka hona chahiye!");
+        alert("Recovery PIN must be exactly 4 digits!");
         return;
     }
 
@@ -90,22 +90,26 @@ const renderCustomers = (customers) => {
     const list = document.getElementById('customer-list');
     list.innerHTML = '';
     customers.forEach((data) => {
-        // Left me Amount, Right me Name aur Number
         let amountHtml = '';
         if (data.balance > 0) {
-            amountHtml = `<span style="color:#ef4444; font-weight:bold; font-size:18px;">₹${data.balance}</span><br><small style="color:#ef4444;">बाकी</small>`;
+            amountHtml = `<span style="color:#ef4444; font-weight:bold; font-size:18px;">₹${data.balance}</span><br><small style="color:#ef4444; font-weight:600;">Due</small>`;
         } else if (data.balance < 0) {
-            amountHtml = `<span style="color:#10b981; font-weight:bold; font-size:18px;">ADV ₹${Math.abs(data.balance)}</span><br><small style="color:#10b981;">जमा है</small>`;
+            amountHtml = `<span style="color:#10b981; font-weight:bold; font-size:18px;">₹${Math.abs(data.balance)}</span><br><small style="color:#10b981; font-weight:600;">Advance</small>`;
         } else {
-            amountHtml = `<span style="color:#6b7280; font-weight:bold; font-size:18px;">₹0</span>`;
+            amountHtml = `<span style="color:#6b7280; font-weight:bold; font-size:18px;">₹0</span><br><small style="color:#6b7280; font-weight:600;">Settled</small>`;
         }
+
+        // Handle undefined phone numbers from old data
+        const displayPhone = (data.phone && data.phone !== 'undefined') ? data.phone : 'No Number';
 
         list.innerHTML += `
             <div class="cust-item" onclick="openCustomerDetail('${data.id}')">
-                <div class="left-amount">${amountHtml}</div>
-                <div class="right-info">
+                <div class="cust-info">
                     <strong>${data.name}</strong>
-                    <p>${data.phone}</p>
+                    <p>${displayPhone}</p>
+                </div>
+                <div class="cust-amount">
+                    ${amountHtml}
                 </div>
             </div>
         `;
@@ -133,48 +137,45 @@ const updateCustomerDetailUI = (balance) => {
     if (balance > 0) {
         balanceEl.innerText = `₹${balance}`;
         balanceEl.style.color = "#ef4444";
-        statusEl.innerText = "ग्राहक को देने हैं (बाकी)";
+        statusEl.innerText = "To Collect (Due)";
     } else if (balance < 0) {
         balanceEl.innerText = `₹${Math.abs(balance)}`;
         balanceEl.style.color = "#10b981";
-        statusEl.innerText = "एडवांस जमा है (ADV)";
+        statusEl.innerText = "Advance Received (ADV)";
     } else {
         balanceEl.innerText = `₹0`;
         balanceEl.style.color = "#1f2937";
-        statusEl.innerText = "कोई हिसाब बाकी नहीं";
+        statusEl.innerText = "No Pending Balance";
     }
 };
 
 document.getElementById('back-btn').addEventListener('click', () => {
     document.getElementById('customer-detail-section').classList.add('hidden');
     document.getElementById('dashboard-section').classList.remove('hidden');
-    if (trxUnsubscribe) trxUnsubscribe(); // Purane listener ko band karna
+    if (trxUnsubscribe) trxUnsubscribe(); 
 });
 
-// Transaction Modal Openers
 document.getElementById('btn-give-credit').addEventListener('click', () => {
     currentTrxType = 'credit';
-    document.getElementById('trx-modal-title').innerText = "उधार दें (Credit)";
+    document.getElementById('trx-modal-title').innerText = "Give Credit";
     document.getElementById('transaction-modal').classList.remove('hidden');
 });
 
 document.getElementById('btn-receive-payment').addEventListener('click', () => {
     currentTrxType = 'payment';
-    document.getElementById('trx-modal-title').innerText = "पैसे लें (Payment)";
+    document.getElementById('trx-modal-title').innerText = "Receive Payment";
     document.getElementById('transaction-modal').classList.remove('hidden');
 });
 
-// Save Transaction
 document.getElementById('save-trx-btn').addEventListener('click', async () => {
     const amount = Number(document.getElementById('trx-amount').value);
     const note = document.getElementById('trx-note').value;
 
-    if (!amount || amount <= 0) { alert("Sahi amount daalein!"); return; }
+    if (!amount || amount <= 0) { alert("Please enter a valid amount!"); return; }
 
     const customer = allCustomers.find(c => c.id === currentCustomerId);
     let newBalance = customer.balance || 0;
 
-    // Logic: Credit = balance badhega, Payment = balance ghatega
     if (currentTrxType === 'credit') {
         newBalance += amount;
     } else {
@@ -182,7 +183,6 @@ document.getElementById('save-trx-btn').addEventListener('click', async () => {
     }
 
     try {
-        // 1. Transaction history me add karein
         await addDoc(collection(db, `customers/${currentCustomerId}/transactions`), {
             amount: amount,
             type: currentTrxType,
@@ -190,13 +190,12 @@ document.getElementById('save-trx-btn').addEventListener('click', async () => {
             date: new Date()
         });
 
-        // 2. Customer ka main balance update karein
         await updateDoc(doc(db, "customers", currentCustomerId), {
             balance: newBalance
         });
 
         closeTrxModal();
-    } catch (err) { alert("Transaction save karne me error aayi!"); }
+    } catch (err) { alert("Error saving transaction!"); }
 });
 
 const loadTransactions = (custId) => {
@@ -209,7 +208,7 @@ const loadTransactions = (custId) => {
         list.innerHTML = '';
         
         if(snapshot.empty) {
-            list.innerHTML = '<p style="text-align:center; color:#6b7280;">No transactions yet.</p>';
+            list.innerHTML = '<p style="text-align:center; color:#e0e7ff; margin-top:20px;">No transactions yet.</p>';
             return;
         }
 
@@ -220,7 +219,7 @@ const loadTransactions = (custId) => {
             const isCredit = data.type === 'credit';
             const color = isCredit ? '#ef4444' : '#10b981';
             const sign = isCredit ? '+' : '-';
-            const title = isCredit ? 'उधार दिया' : 'पैसे मिले';
+            const title = isCredit ? 'Credit Given' : 'Payment Received';
 
             list.innerHTML += `
                 <div class="trx-item">
@@ -243,7 +242,7 @@ document.getElementById('add-cust-btn').addEventListener('click', openModal);
 
 document.getElementById('save-cust-btn').addEventListener('click', async () => {
     const name = document.getElementById('cust-name').value;
-    const phone = document.getElementById('cust-phone').value; // Ab Amount ki jagah Phone lega
+    const phone = document.getElementById('cust-phone').value; 
 
     if(!name || !phone) { alert("Please fill all details!"); return; }
 
@@ -252,7 +251,7 @@ document.getElementById('save-cust-btn').addEventListener('click', async () => {
             shopId: auth.currentUser.uid,
             name: name,
             phone: phone,
-            balance: 0, // Naya customer, toh balance 0
+            balance: 0,
             date: new Date()
         });
         closeModal();
@@ -267,7 +266,6 @@ const loadCustomers = (uid) => {
     onSnapshot(q, (snapshot) => {
         allCustomers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         
-        // Agar detail page khula hai toh waha ka balance bhi live update ho
         if(currentCustomerId && !document.getElementById('customer-detail-section').classList.contains('hidden')){
             const updatedCust = allCustomers.find(c => c.id === currentCustomerId);
             if(updatedCust) updateCustomerDetailUI(updatedCust.balance);
@@ -280,7 +278,7 @@ const loadCustomers = (uid) => {
 
 document.getElementById('search-customer').addEventListener('input', (e) => {
     const term = e.target.value.trim().toLowerCase();
-    const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || c.phone.includes(term));
+    const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(term) || (c.phone && c.phone.includes(term)));
     renderCustomers(filtered);
 });
 
@@ -305,4 +303,4 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-                                                                  
+            
