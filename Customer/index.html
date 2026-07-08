@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,46 +13,46 @@
         
         <div id="login-section" class="auth-card">
             <h2>Welcome Back</h2>
-            <p>अपने खाते में लॉगिन करें</p>
+            <p>Login to your account</p>
             <form id="login-form">
-                <input type="tel" id="login-phone" placeholder="मोबाइल नंबर" required>
-                <input type="password" id="login-password" placeholder="पासवर्ड" required>
-                <button type="submit" class="primary-btn">लॉगिन करें</button>
+                <input type="tel" id="login-phone" placeholder="Mobile Number" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit" class="primary-btn">Login</button>
             </form>
-            <p class="toggle-link" onclick="showSignup()">नया खाता बनाएँ? <span>यहाँ क्लिक करें</span></p>
+            <p class="toggle-link" onclick="showSignup()">Don't have an account? <span>Sign up here</span></p>
         </div>
 
         <div id="signup-section" class="auth-card hidden">
             <h2>Create Account</h2>
-            <p>नई दुकान रजिस्टर करें</p>
+            <p>Register your new shop</p>
             <form id="signup-form">
-                <input type="text" id="signup-shop" placeholder="दुकान का नाम" required>
-                <input type="tel" id="signup-phone" placeholder="मोबाइल नंबर" required>
-                <input type="password" id="signup-password" placeholder="पासवर्ड" required>
-                <input type="number" id="signup-pin" placeholder="4-अंकों का रिकवरी पिन" required>
-                <button type="submit" class="primary-btn">खाता बनाएँ</button>
+                <input type="text" id="signup-shop" placeholder="Shop Name" required>
+                <input type="tel" id="signup-phone" placeholder="Mobile Number" required>
+                <input type="password" id="signup-password" placeholder="Password" required>
+                <input type="number" id="signup-pin" placeholder="4-Digit Recovery PIN" required>
+                <button type="submit" class="primary-btn">Create Account</button>
             </form>
-            <p class="toggle-link" onclick="showLogin()">पहले से अकाउंट है? <span>लॉगिन करें</span></p>
+            <p class="toggle-link" onclick="showLogin()">Already have an account? <span>Login here</span></p>
         </div>
 
         <div id="dashboard-section" class="hidden">
             <header>
-                <h3 id="shop-name-display">मेरी दुकान</h3>
+                <h3 id="shop-name-display">My Shop</h3>
                 <button id="logout-btn">Logout</button>
             </header>
 
             <div class="stats-container">
                 <div class="stat-card">
-                    <p>कुल बाकी (Due)</p>
+                    <p>Total Due</p>
                     <h2 id="total-due">₹0</h2>
                 </div>
                 <div class="stat-card">
-                    <p>आज की वसूली</p>
+                    <p>Today's Collection</p>
                     <h2 id="today-collection">₹0</h2>
                 </div>
             </div>
 
-            <input type="text" id="search-customer" placeholder="कस्टमर खोजें...">
+            <input type="text" id="search-customer" placeholder="Search customer...">
             
             <div id="customer-list">
                 </div>
