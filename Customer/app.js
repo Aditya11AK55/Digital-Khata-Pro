@@ -71,18 +71,29 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     } catch (err) { alert("Invalid mobile number or password!"); }
 });
 
-// --- Stats Logic ---
+// --- Stats Logic (Updated for Today's Collection) ---
 const updateStats = () => {
     let totalDue = 0;
-    let totalAdvance = 0;
+    let todayCollection = 0;
+    const todayStr = new Date().toDateString();
 
     allCustomers.forEach(c => {
-        if (c.balance > 0) totalDue += c.balance;
-        else if (c.balance < 0) totalAdvance += Math.abs(c.balance);
+        // Calculate Total Due
+        if (c.balance > 0) {
+            totalDue += c.balance;
+        }
+
+        // Calculate Today's Collection
+        if (c.lastPaymentDate) {
+            const payDateStr = c.lastPaymentDate.toDate ? c.lastPaymentDate.toDate().toDateString() : new Date(c.lastPaymentDate).toDateString();
+            if (payDateStr === todayStr) {
+                todayCollection += (c.todayCollectionAmount || 0);
+            }
+        }
     });
 
     document.getElementById('total-due').innerText = `₹${totalDue}`;
-    document.getElementById('total-advance').innerText = `₹${totalAdvance}`;
+    document.getElementById('today-collection').innerText = `₹${todayCollection}`;
 };
 
 // --- Customer Render Logic ---
@@ -133,7 +144,6 @@ const updateCustomerDetailUI = (balance) => {
     const balanceEl = document.getElementById('detail-balance');
     const statusEl = document.getElementById('detail-status');
     
-    // Agar balance purane system ki wajah se undefined ho, toh 0 maan lein
     const safeBalance = balance || 0; 
 
     if (safeBalance > 0) {
@@ -169,46 +179,61 @@ document.getElementById('btn-receive-payment').addEventListener('click', () => {
     document.getElementById('transaction-modal').classList.remove('hidden');
 });
 
-// FIXED: Robust Transaction Saving Logic with Proper Error Catching
+// --- Save Transaction Logic (Updated) ---
 document.getElementById('save-trx-btn').addEventListener('click', async () => {
     try {
         const amount = Number(document.getElementById('trx-amount').value);
         const note = document.getElementById('trx-note').value;
 
         if (!amount || amount <= 0) { alert("Please enter a valid amount!"); return; }
-
         if (!currentCustomerId) { alert("Error: Customer ID missing!"); return; }
 
         const customer = allCustomers.find(c => c.id === currentCustomerId);
         if (!customer) { alert("Error: Customer data not found!"); return; }
 
         let newBalance = customer.balance || 0;
+        const today = new Date();
+        const todayStr = today.toDateString();
+        let updateData = {};
 
         if (currentTrxType === 'credit') {
             newBalance += amount;
+            updateData = { balance: newBalance };
         } else {
+            // Payment logic
             newBalance -= amount;
+            
+            let newTodayAmount = amount;
+            // Check if there was already a payment today
+            if (customer.lastPaymentDate) {
+                const payDateStr = customer.lastPaymentDate.toDate ? customer.lastPaymentDate.toDate().toDateString() : new Date(customer.lastPaymentDate).toDateString();
+                if (payDateStr === todayStr) {
+                    newTodayAmount = (customer.todayCollectionAmount || 0) + amount;
+                }
+            }
+
+            updateData = { 
+                balance: newBalance,
+                lastPaymentDate: today,
+                todayCollectionAmount: newTodayAmount
+            };
         }
 
-        // Safe explicit path format for subcollections
         const trxCollection = collection(db, "customers", currentCustomerId, "transactions");
         
         await addDoc(trxCollection, {
             amount: amount,
             type: currentTrxType,
             note: note,
-            date: new Date()
+            date: today
         });
 
-        await updateDoc(doc(db, "customers", currentCustomerId), {
-            balance: newBalance
-        });
+        await updateDoc(doc(db, "customers", currentCustomerId), updateData);
 
         closeTrxModal();
         
     } catch (err) { 
         console.error("Save Trx Error:", err);
-        // Ab yahan par actual error reason likha aayega
         alert("Transaction Failed! Reason: " + err.message); 
     }
 });
@@ -251,7 +276,6 @@ const loadTransactions = (custId) => {
         });
     }, (error) => {
         console.error("Load Trx Error:", error);
-        // Agar history load hone mein error aayi toh ye alert aayega
         alert("Error loading history: " + error.message);
     });
 };
@@ -322,4 +346,4 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-        
+                        
