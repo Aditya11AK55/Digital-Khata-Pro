@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Khata Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="main-container">
+        <div id="login-section" class="auth-card">
+            <h2>Welcome Back</h2>
+            <p>अपने खाते में लॉगिन करें</p>
+            <form id="login-form">
+                <input type="tel" id="login-phone" placeholder="मोबाइल नंबर" required>
+                <input type="password" id="login-password" placeholder="पासवर्ड" required>
+                <button type="submit" class="primary-btn">लॉगिन करें</button>
+            </form>
+            <p class="toggle-link" onclick="showSignup()">नया खाता बनाएँ? <span>यहाँ क्लिक करें</span></p>
+        </div>
+
+        <div id="signup-section" class="auth-card hidden">
+            <h2>Create Account</h2>
+            <p>नई दुकान रजिस्टर करें</p>
+            <form id="signup-form">
+                <input type="text" id="signup-shop" placeholder="दुकान का नाम" required>
+                <input type="tel" id="signup-phone" placeholder="मोबाइल नंबर" required>
+                <input type="password" id="signup-password" placeholder="पासवर्ड" required>
+                <input type="number" id="signup-pin" placeholder="4-अंकों का रिकवरी पिन" required>
+                <button type="submit" class="primary-btn">खाता बनाएँ</button>
+            </form>
+            <p class="toggle-link" onclick="showLogin()">पहले से अकाउंट है? <span>लॉगिन करें</span></p>
+        </div>
+    </div>
+
+    <script src="app.js" type="module"></script>
+</body>
+</html>
