@@ -1,5 +1,10 @@
 /* General Settings */
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    font-family: 'Poppins', sans-serif; 
+}
 
 body {
     min-height: 100vh;
@@ -10,7 +15,11 @@ body {
     padding: 30px 15px;
 }
 
-.main-container { width: 100%; max-width: 450px; }
+.main-container { 
+    width: 100%; 
+    max-width: 450px; 
+    position: relative;
+}
 
 /* Auth Cards */
 .auth-card {
@@ -35,6 +44,10 @@ input {
     font-size: 15px;
 }
 
+input:focus {
+    border-color: #4f46e5;
+}
+
 .primary-btn {
     width: 100%;
     padding: 14px;
@@ -45,73 +58,198 @@ input {
     font-weight: 600;
     cursor: pointer;
     font-size: 15px;
+    transition: background 0.3s;
 }
+.primary-btn:hover { background: #4338ca; }
 
 .cancel-btn {
-    background: none; border: none; color: #ef4444; margin-top: 10px; cursor: pointer; font-weight: 600;
+    background: none; 
+    border: none; 
+    color: #ef4444; 
+    margin-top: 10px; 
+    cursor: pointer; 
+    font-weight: 600;
 }
 
 .toggle-link { margin-top: 15px; cursor: pointer; font-size: 13px; }
 .toggle-link span { color: #4f46e5; font-weight: bold; }
 
 /* Dashboard Styles */
-#dashboard-section, #customer-detail-section { color: white; width: 100%; }
-header { display: flex; justify-content: space-between; padding: 10px 0 20px 0; align-items: center; }
-#logout-btn { background: #ef4444; border: none; padding: 8px 15px; color: white; border-radius: 8px; cursor: pointer; font-weight:600;}
-
-.stats-container { display: flex; gap: 10px; margin-bottom: 20px; }
-.stat-card { 
-    flex: 1; background: rgba(255,255,255,0.15); padding: 15px; 
-    border-radius: 15px; text-align: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);
+#dashboard-section, #customer-detail-section { 
+    color: white; 
+    width: 100%; 
 }
+
+header { 
+    display: flex; 
+    justify-content: space-between; 
+    padding: 10px 0 20px 0; 
+    align-items: center; 
+}
+
+#logout-btn { 
+    background: #ef4444; 
+    border: none; 
+    padding: 8px 15px; 
+    color: white; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600;
+}
+
+.stats-container { 
+    display: flex; 
+    gap: 10px; 
+    margin-bottom: 20px; 
+}
+
+.stat-card { 
+    flex: 1; 
+    background: rgba(255,255,255,0.15); 
+    padding: 15px; 
+    border-radius: 15px; 
+    text-align: center; 
+    backdrop-filter: blur(10px); 
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
 .stat-card h2 { font-size: 20px; color: white; margin-top: 5px; font-weight: 700;}
 .stat-card p { color: #e0e7ff; margin-bottom: 0; font-size: 12px; }
 
-#search-customer { width: 100%; padding: 14px; border-radius: 12px; border: none; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+#search-customer { 
+    width: 100%; 
+    padding: 14px; 
+    border-radius: 12px; 
+    border: none; 
+    margin-bottom: 20px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
 
-.section-title { font-size: 16px; margin-bottom: 10px; color: #e0e7ff; font-weight: 400;}
+/* Section Header Box */
+.section-header-box {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    text-align: center;
+}
+.section-header-box h4 {
+    color: #7c3aed;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
 
-/* Customer List - Left Amount, Right Name */
+/* Scrollable Lists */
+#customer-list, #transaction-list {
+    max-height: 50vh; /* Limits height so screen doesn't stretch infinitely */
+    overflow-y: auto; /* Adds scrollbar when needed */
+    padding-bottom: 20px;
+}
+
+/* Hide scrollbar for a cleaner look but keep functionality */
+#customer-list::-webkit-scrollbar, #transaction-list::-webkit-scrollbar {
+    display: none;
+}
+#customer-list, #transaction-list {
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
+}
+
+/* Updated Customer List Styling */
 .cust-item {
-    background: white; color: black; padding: 15px 20px; margin-bottom: 12px; 
-    border-radius: 12px; display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s;
+    background: white; 
+    color: #1f2937; 
+    padding: 18px 20px; 
+    margin-bottom: 12px; 
+    border-radius: 12px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+    cursor: pointer; 
+    transition: transform 0.2s;
 }
 .cust-item:active { transform: scale(0.98); }
-.left-amount { text-align: left; }
-.right-info { text-align: right; }
-.right-info p { color: #6b7280; font-size: 12px; margin: 0; }
+
+.cust-info { text-align: left; }
+.cust-info strong { font-size: 16px; display: block; margin-bottom: 4px; color: #111827;}
+.cust-info p { color: #6b7280; font-size: 13px; margin: 0; }
+
+.cust-amount { text-align: right; }
 
 .fab { 
-    position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-    background: #10b981; color: white; border-radius: 50%; font-size: 30px; 
-    border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; z-index: 100;
+    position: fixed; 
+    bottom: 30px; 
+    right: 30px; 
+    width: 60px; 
+    height: 60px;
+    background: #10b981; 
+    color: white; 
+    border-radius: 50%; 
+    font-size: 30px; 
+    border: none; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+    cursor: pointer; 
+    z-index: 100;
 }
 
 /* Detail Section Styles */
-.detail-header { border-bottom: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px;}
-.icon-btn { background: none; border: none; color: white; font-size: 16px; cursor: pointer;}
+.detail-header { 
+    border-bottom: 1px solid rgba(255,255,255,0.2); 
+    margin-bottom: 20px;
+}
+.icon-btn { 
+    background: none; 
+    border: none; 
+    color: white; 
+    font-size: 16px; 
+    cursor: pointer;
+}
 
 .big-balance-card {
-    background: white; border-radius: 20px; padding: 30px; text-align: center; margin-bottom: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2); color: #1f2937;
+    background: white; 
+    border-radius: 20px; 
+    padding: 30px; 
+    text-align: center; 
+    margin-bottom: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+    color: #1f2937;
 }
 .big-balance-card p { margin: 0; font-size: 14px; color: #6b7280; }
 .big-balance-card h1 { font-size: 40px; margin: 5px 0; }
 
-.action-buttons { display: flex; gap: 15px; margin-bottom: 30px; }
+.action-buttons { 
+    display: flex; 
+    gap: 15px; 
+    margin-bottom: 30px; 
+}
 .action-buttons button { 
-    flex: 1; padding: 15px; border: none; border-radius: 12px; color: white; 
-    font-weight: 600; font-size: 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    flex: 1; 
+    padding: 15px; 
+    border: none; 
+    border-radius: 12px; 
+    color: white; 
+    font-weight: 600; 
+    font-size: 16px; 
+    cursor: pointer; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 .danger-btn { background: #ef4444; }
 .success-btn { background: #10b981; }
 
 /* Transaction History */
 .trx-item {
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-    padding: 15px; border-radius: 12px; margin-bottom: 10px;
-    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(255,255,255,0.1); 
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 15px; 
+    border-radius: 12px; 
+    margin-bottom: 10px;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
 }
 .trx-details strong { font-size: 15px; }
 .trx-date { font-size: 11px; color: #d1d5db; margin-top: 2px; margin-bottom: 0 !important;}
@@ -120,14 +258,27 @@ header { display: flex; justify-content: space-between; padding: 10px 0 20px 0; 
 
 /* Modal Styles */
 .modal { 
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-    background: rgba(0,0,0,0.7); display: flex; 
-    justify-content: center; align-items: center; z-index: 1000;
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.7); 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 1000;
 }
 .modal-content { 
-    background: white; padding: 25px; border-radius: 20px; 
-    width: 90%; max-width: 350px; color: #1f2937; text-align: center;
+    background: white; 
+    padding: 25px; 
+    border-radius: 20px; 
+    width: 90%; 
+    max-width: 350px; 
+    color: #1f2937; 
+    text-align: center;
 }
 .modal-content h3 { margin-bottom: 20px; }
 
 .hidden { display: none !important; }
+        
