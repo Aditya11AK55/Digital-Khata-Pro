@@ -60,6 +60,16 @@
             <button id="add-cust-btn" class="fab">+</button>
         </div>
 
+        <div id="add-customer-modal" class="hidden modal">
+            <div class="modal-content">
+                <h3>Add New Customer</h3>
+                <input type="text" id="cust-name" placeholder="Customer Name">
+                <input type="number" id="cust-due" placeholder="Amount Due (₹)">
+                <button id="save-cust-btn" class="primary-btn">Save Customer</button>
+                <button onclick="closeModal()" style="background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+
     </div>
 
     <script src="app.js" type="module"></script>
