@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 🚀 यहाँ अपनी नयी Firebase Config डालें
+// 🚀 Add your Firebase Config here
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -34,14 +34,14 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
     const phone = document.getElementById('signup-phone').value;
     const password = document.getElementById('signup-password').value;
     const pin = document.getElementById('signup-pin').value;
-    const email = `${phone}@digital.com`;
+    const email = `${phone}@digitalkhata.com`;
 
     try {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
         await setDoc(doc(db, "shops", userCred.user.uid), { shopName, phone, pin });
-        alert("अकाउंट बन गया! अब लॉग इन करें।");
+        alert("Account created successfully! Please login.");
         showLogin();
-    } catch (err) { alert(err.message); }
+    } catch (err) { alert("Error: " + err.message); }
 });
 
 document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -49,8 +49,8 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const phone = document.getElementById('login-phone').value;
     const password = document.getElementById('login-password').value;
     try {
-        await signInWithEmailAndPassword(auth, `${phone}@digital.com`, password);
-    } catch (err) { alert("लॉगिन असफल!"); }
+        await signInWithEmailAndPassword(auth, `${phone}@digitalkhata.com`, password);
+    } catch (err) { alert("Invalid mobile number or password!"); }
 });
 
 // --- Dashboard Logic ---
