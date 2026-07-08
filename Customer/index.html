@@ -47,26 +47,59 @@
                     <h2 id="total-due">₹0</h2>
                 </div>
                 <div class="stat-card">
-                    <p>Today's Collection</p>
-                    <h2 id="today-collection">₹0</h2>
+                    <p>Total Advance</p>
+                    <h2 id="total-advance">₹0</h2>
                 </div>
             </div>
 
             <input type="text" id="search-customer" placeholder="Search customer...">
             
+            <h4 class="section-title">Your Customers</h4>
             <div id="customer-list">
                 </div>
 
             <button id="add-cust-btn" class="fab">+</button>
         </div>
 
+        <div id="customer-detail-section" class="hidden">
+            <header class="detail-header">
+                <button id="back-btn" class="icon-btn">⬅ Back</button>
+                <h3 id="detail-cust-name">Customer Name</h3>
+                <div style="width: 50px;"></div> </header>
+
+            <div class="big-balance-card">
+                <p>Total Balance</p>
+                <h1 id="detail-balance">₹0</h1>
+                <p id="detail-status"></p>
+            </div>
+
+            <div class="action-buttons">
+                <button id="btn-give-credit" class="danger-btn">उधार दें</button>
+                <button id="btn-receive-payment" class="success-btn">पैसे जमा करें</button>
+            </div>
+
+            <h4 class="section-title">Your Transaction History</h4>
+            <div id="transaction-list">
+                </div>
+        </div>
+
         <div id="add-customer-modal" class="hidden modal">
             <div class="modal-content">
                 <h3>Add New Customer</h3>
-                <input type="text" id="cust-name" placeholder="Customer Name">
-                <input type="number" id="cust-due" placeholder="Amount Due (₹)">
+                <input type="text" id="cust-name" placeholder="Customer Name" required>
+                <input type="tel" id="cust-phone" placeholder="Mobile Number" required>
                 <button id="save-cust-btn" class="primary-btn">Save Customer</button>
-                <button onclick="closeModal()" style="background:none; border:none; color:red; margin-top:10px; cursor:pointer;">Cancel</button>
+                <button onclick="closeModal()" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+
+        <div id="transaction-modal" class="hidden modal">
+            <div class="modal-content">
+                <h3 id="trx-modal-title">Transaction</h3>
+                <input type="number" id="trx-amount" placeholder="Amount (₹)" required>
+                <input type="text" id="trx-note" placeholder="Note (Optional)">
+                <button id="save-trx-btn" class="primary-btn">Save</button>
+                <button onclick="closeTrxModal()" class="cancel-btn">Cancel</button>
             </div>
         </div>
 
