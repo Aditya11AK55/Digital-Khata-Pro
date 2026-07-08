@@ -11,6 +11,7 @@
 
     <div class="main-container">
         
+        <!-- Login Section -->
         <div id="login-section" class="auth-card">
             <h2>Welcome Back</h2>
             <p>Login to your account</p>
@@ -23,6 +24,7 @@
             <p class="toggle-link" onclick="showSignup()">Don't have an account? <span>Sign up here</span></p>
         </div>
 
+        <!-- Forgot Password Section -->
         <div id="forgot-password-section" class="auth-card hidden">
             <h2>Recover Password</h2>
             <p>Enter details to view your password</p>
@@ -40,6 +42,7 @@
             <p class="toggle-link" onclick="showLogin()">Back to <span>Login</span></p>
         </div>
 
+        <!-- Signup Section -->
         <div id="signup-section" class="auth-card hidden">
             <h2>Create Account</h2>
             <p>Register your new shop</p>
@@ -53,6 +56,7 @@
             <p class="toggle-link" onclick="showLogin()">Already have an account? <span>Login here</span></p>
         </div>
 
+        <!-- Blocked / Contact Support Section -->
         <div id="blocked-section" class="auth-card hidden">
             <h2 style="color: #ef4444; font-size: 24px; margin-bottom: 15px;">Access Denied</h2>
             <p style="color: #1f2937; font-weight: 500;">Your account has been temporarily disabled by the administrator.</p>
@@ -60,11 +64,13 @@
             <button id="logout-blocked-btn" class="cancel-btn">Logout</button>
         </div>
 
+        <!-- Main Dashboard Section -->
         <div id="dashboard-section" class="hidden">
             <header>
                 <h3 id="shop-name-display">My Shop</h3>
                 <div style="display: flex; gap: 10px;">
-                    <button id="change-pass-btn" style="background: #4f46e5; border: none; padding: 8px 12px; color: white; border-radius: 8px; cursor: pointer; font-weight:600; font-size: 12px;">Password</button>
+                    <!-- Password button changed to Three Dots / Key Icon -->
+                    <button id="change-pass-btn" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); padding: 8px 12px; color: white; border-radius: 8px; cursor: pointer; font-weight:bold; font-size: 16px; letter-spacing: 2px;" title="Change Password">•••</button>
                     <button id="logout-btn">Logout</button>
                 </div>
             </header>
@@ -88,11 +94,13 @@
             </div>
 
             <div id="customer-list">
-                </div>
+                <!-- Customer items will render here -->
+            </div>
 
             <button id="add-cust-btn" class="fab">+</button>
         </div>
 
+        <!-- Customer Detail & Transaction Section -->
         <div id="customer-detail-section" class="hidden">
             <header class="detail-header">
                 <button id="back-btn" class="icon-btn">⬅ Back</button>
@@ -115,9 +123,11 @@
                 <h4>Transaction History</h4>
             </div>
             <div id="transaction-list">
-                </div>
+                <!-- Transactions will render here -->
+            </div>
         </div>
 
+        <!-- Add Customer Modal -->
         <div id="add-customer-modal" class="hidden modal">
             <div class="modal-content">
                 <h3>Add New Customer</h3>
@@ -128,6 +138,7 @@
             </div>
         </div>
 
+        <!-- Add Transaction Modal -->
         <div id="transaction-modal" class="hidden modal">
             <div class="modal-content">
                 <h3 id="trx-modal-title">Transaction</h3>
@@ -138,6 +149,7 @@
             </div>
         </div>
 
+        <!-- Premium Paywall Modal -->
         <div id="premium-modal" class="hidden modal">
             <div class="modal-content" style="max-width: 380px; padding: 30px 20px;">
                 <h2 style="color: #7c3aed; margin-bottom: 10px; font-size: 22px;">Upgrade to Premium 🚀</h2>
@@ -161,6 +173,7 @@
             </div>
         </div>
 
+        <!-- Change Password Modal -->
         <div id="change-password-modal" class="hidden modal">
             <div class="modal-content">
                 <h3>Change Password</h3>
