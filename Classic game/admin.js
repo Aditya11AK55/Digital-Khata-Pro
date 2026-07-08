@@ -1,184 +1,176 @@
+// ==================== FIREBASE CONFIGURATION ====================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, collection, updateDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// --- Firebase Config (Same as app.js) ---
 const firebaseConfig = {
-    apiKey: "AIzaSyCzsLxPKdhRpdiy-5tUfDaoyDJzhXP8Kj8",
-    authDomain: "digitalkhatapro-b0400.firebaseapp.com",
-    projectId: "digitalkhatapro-b0400",
-    storageBucket: "digitalkhatapro-b0400.appspot.com",
-    messagingSenderId: "320481964196",
-    appId: "1:320481964196:web:960fef49b099107d92f631"
+    apiKey: "AIzaSyD7dprFu5MIL4EgW0lJ0EkbBZeNguF4d3c",
+    authDomain: "digital-khata-64fa9.firebaseapp.com",
+    projectId: "digital-khata-64fa9",
+    storageBucket: "digital-khata-64fa9.firebasestorage.app",
+    messagingSenderId: "942531584479",
+    appId: "1:942531584479:web:571ff0eff5e0b1c266e46a"
 };
 
-const app = initializeApp(firebaseConfig);
+// 🚀 MASTER STROKE: यहाँ "AdminApp" नाम देकर हमने दोनों का कनेक्शन हमेशा के लिए तोड़ दिया!
+const app = initializeApp(firebaseConfig, "AdminApp"); 
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- Admin Login Logic ---
-document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+// ==================== SUPER ADMIN CREDENTIALS ====================
+// यही वह ईमेल है जिससे आपका एडमिन पैनल खुलेगा
+const MASTER_ADMIN_EMAIL = "admin@khata.com"; 
+
+// ==================== DOM ELEMENTS ====================
+const loginScreen = document.getElementById('admin-login-screen');
+const dashboardScreen = document.getElementById('admin-dashboard-screen');
+const loginForm = document.getElementById('admin-login-form');
+const shopsListContainer = document.getElementById('admin-shops-list');
+const searchInput = document.getElementById('admin-search-shop');
+
+let allShopsData = [];
+
+// ==================== 1. SECURE AUTHENTICATION ====================
+loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('admin-email').value;
     const password = document.getElementById('admin-password').value;
 
+    // सुरक्षा चेक: अगर ईमेल admin@khata.com नहीं है, तो तुरंत बाहर निकाल दो
+    if (email !== MASTER_ADMIN_EMAIL) {
+        alert("Access Denied! You are not authorized. Only Admin is allowed.");
+        return;
+    }
+
     try {
         await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) {
-        alert("Invalid Admin Credentials! " + err.message);
+        loginForm.reset();
+    } catch (error) {
+        alert("Invalid Admin Credentials! गलत ईमेल या पासवर्ड।");
     }
 });
 
-document.getElementById('admin-logout-btn').addEventListener('click', () => {
-    signOut(auth);
-});
+document.getElementById('admin-logout-btn').addEventListener('click', () => signOut(auth));
 
-// --- Auth State Change (Check if Admin) ---
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Admin Access (Yahan aap apna personal admin email set kar sakte hain)
-        // Abhi ke liye hum assume kar rahe hain ki jo yahan login karega wo admin hai.
-        document.getElementById('admin-login-section').classList.add('hidden');
-        document.getElementById('admin-dashboard-section').classList.remove('hidden');
-        
-        loadAdminData(); // Load all tables and stats
+    // सिर्फ तभी अंदर जाने दो जब यूजर लॉगिन हो और उसका ईमेल एडमिन वाला हो
+    if (user && user.email === MASTER_ADMIN_EMAIL) {
+        loginScreen.classList.add('hidden');
+        dashboardScreen.classList.remove('hidden');
+        loadAllShops();
     } else {
-        document.getElementById('admin-dashboard-section').classList.add('hidden');
-        document.getElementById('admin-login-section').classList.remove('hidden');
+        loginScreen.classList.remove('hidden');
+        dashboardScreen.classList.add('hidden');
     }
 });
 
-// --- Load Dashboard Data ---
-const loadAdminData = () => {
-    
-    // 1. Load Premium Requests (Pending)
-    const qRequests = query(collection(db, "premium_requests"), where("status", "==", "Pending"));
-    onSnapshot(qRequests, (snapshot) => {
-        const requestsList = document.getElementById('requests-list');
-        requestsList.innerHTML = '';
-        document.getElementById('pending-requests-count').innerText = snapshot.size;
+// ==================== 2. LOAD & RENDER SHOPS ====================
+function loadAllShops() {
+    onSnapshot(collection(db, "khata_shops"), (snapshot) => {
+        allShopsData = [];
+        let totalShops = 0;
+        let premiumShops = 0;
 
-        if (snapshot.empty) {
-            requestsList.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#6b7280;">No pending requests right now.</td></tr>`;
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            allShopsData.push({ id: docSnap.id, ...data });
+            
+            totalShops++;
+            if (data.isPremium) premiumShops++;
+        });
+
+        document.getElementById('total-shops-count').innerText = totalShops;
+        document.getElementById('premium-shops-count').innerText = premiumShops;
+
+        renderShops(allShopsData);
+    }, (error) => {
+        console.error("Error loading shops:", error);
+    });
+}
+
+function renderShops(shopsArray) {
+    shopsListContainer.innerHTML = '';
+
+    if (shopsArray.length === 0) {
+        shopsListContainer.innerHTML = '<div class="empty-state">No shops registered yet.</div>';
+        return;
+    }
+
+    shopsArray.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    shopsArray.forEach(shop => {
+        const isBlocked = shop.isBlocked || false;
+        const isPremium = shop.isPremium || false;
+
+        let badgeHTML = '';
+        if (isBlocked) {
+            badgeHTML = `<span class="badge badge-blocked" style="background:#dc2626; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">Blocked</span>`;
+        } else if (isPremium) {
+            badgeHTML = `<span class="badge badge-premium" style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">Premium</span>`;
+        } else {
+            badgeHTML = `<span class="badge badge-free" style="background:#10b981; color:white; padding:2px 8px; border-radius:10px; font-size:12px;">Free</span>`;
         }
 
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            const dateStr = data.requestDate.toDate ? data.requestDate.toDate().toLocaleString('en-IN') : new Date(data.requestDate).toLocaleString('en-IN');
-            
-            requestsList.innerHTML += `
-                <tr>
-                    <td><strong>${data.shopName}</strong></td>
-                    <td>${data.phone}</td>
-                    <td style="color: #4f46e5; font-weight:bold;">${data.requestedPlan} (₹${data.price})</td>
-                    <td style="font-size: 12px; color: #6b7280;">${dateStr}</td>
-                    <td>
-                        <button class="action-btn btn-success" onclick="approvePlan('${docSnap.id}', '${data.shopId}', '${data.requestedPlan}')">Approve</button>
-                    </td>
-                </tr>
-            `;
-        });
+        const card = document.createElement('div');
+        card.style.cssText = "background:white; padding:15px; margin-bottom:15px; border-radius:12px; box-shadow:0 4px 10px rgba(0,0,0,0.05);";
+        card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <h4 style="margin:0;">${shop.shopName}</h4>
+                ${badgeHTML}
+            </div>
+            <div style="font-size:13px; color:#4b5563; line-height:1.6; margin-bottom:15px;">
+                <p><strong>Phone:</strong> ${shop.phone}</p>
+                <p><strong>Password:</strong> ${shop.password || 'Hidden'}</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                ${!isPremium 
+                    ? `<button style="flex:1; padding:8px; background:#f59e0b; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="makePremium('${shop.id}')">★ Premium</button>` 
+                    : `<button style="flex:1; padding:8px; background:#9ca3af; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="removePremium('${shop.id}')">✖ Free</button>`}
+                
+                ${!isBlocked 
+                    ? `<button style="flex:1; padding:8px; background:#dc2626; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="toggleBlock('${shop.id}', true)">⊘ Block</button>` 
+                    : `<button style="flex:1; padding:8px; background:#10b981; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="toggleBlock('${shop.id}', false)">✓ Unblock</button>`}
+                
+                <button style="padding:8px 12px; background:#1f2937; color:white; border:none; border-radius:8px; cursor:pointer;" onclick="deleteShop('${shop.id}')">🗑</button>
+            </div>
+        `;
+        shopsListContainer.appendChild(card);
     });
+}
 
-    // 2. Load All Shops Data
-    const qShops = collection(db, "shops");
-    onSnapshot(qShops, (snapshot) => {
-        const shopsList = document.getElementById('shops-list');
-        shopsList.innerHTML = '';
-        
-        let totalShops = snapshot.size;
-        let premiumUsers = 0;
+// ==================== 3. SEARCH FUNCTIONALITY ====================
+searchInput.addEventListener('input', (e) => {
+    const queryText = e.target.value.toLowerCase();
+    const filteredShops = allShopsData.filter(shop => 
+        (shop.shopName && shop.shopName.toLowerCase().includes(queryText)) || 
+        (shop.phone && shop.phone.includes(queryText))
+    );
+    renderShops(filteredShops);
+});
 
-        snapshot.forEach((docSnap) => {
-            const data = docSnap.data();
-            
-            if (data.plan !== 'Free') premiumUsers++;
-            
-            const dateStr = data.joinDate && data.joinDate.toDate ? data.joinDate.toDate().toLocaleDateString('en-IN') : 'N/A';
-            const statusClass = data.status === 'Blocked' ? 'status-blocked' : 'status-active';
-            const statusText = data.status || 'Active';
-            const blockActionText = data.status === 'Blocked' ? 'Unblock' : 'Block';
-            const blockActionClass = data.status === 'Blocked' ? 'btn-success' : 'btn-warning';
-
-            shopsList.innerHTML += `
-                <tr>
-                    <td><strong>${data.shopName}</strong></td>
-                    <td>${data.phone}</td>
-                    <td style="font-weight: bold; color: ${data.plan === 'Free' ? '#10b981' : '#4f46e5'}">${data.plan}</td>
-                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td style="font-size: 12px;">${dateStr}</td>
-                    <td>
-                        <button class="action-btn ${blockActionClass}" onclick="toggleBlockStatus('${docSnap.id}', '${statusText}')">${blockActionText}</button>
-                        <button class="action-btn btn-danger" onclick="deleteShop('${docSnap.id}', '${data.shopName}')">Delete</button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        // Update Top Stats
-        document.getElementById('total-shops-count').innerText = totalShops;
-        document.getElementById('premium-users-count').innerText = premiumUsers;
-    });
-};
-
-// --- Action Functions (Made global to attach to inline HTML onclick) ---
-
-window.approvePlan = async (requestId, shopId, planName) => {
-    if(!confirm(`Are you sure you have received payment and want to approve ${planName}?`)) return;
-    
-    // Determine limit based on plan name
-    let newLimit = 100;
-    let finalPlanName = 'Free';
-
-    if(planName.includes('Pro Plan') || planName.includes('399')) {
-        newLimit = 500;
-        finalPlanName = 'Pro Plan';
-    } else if (planName.includes('Max Plan') || planName.includes('699')) {
-        newLimit = 1000;
-        finalPlanName = 'Max Plan';
-    }
-
-    try {
-        // 1. Update Shop's Plan & Limit
-        await updateDoc(doc(db, "shops", shopId), {
-            plan: finalPlanName,
-            limit: newLimit
-        });
-
-        // 2. Mark Request as Approved
-        await updateDoc(doc(db, "premium_requests", requestId), {
-            status: "Approved"
-        });
-
-        alert("Plan upgraded successfully!");
-    } catch(err) {
-        alert("Error approving plan: " + err.message);
+// ==================== 4. ADMIN ACTIONS ====================
+window.makePremium = async (shopId) => {
+    if(confirm("क्या आप सच में इस दुकानदार को Premium बनाना चाहते हैं?")) {
+        await updateDoc(doc(db, "khata_shops", shopId), { isPremium: true });
     }
 };
 
-window.toggleBlockStatus = async (shopId, currentStatus) => {
-    const newStatus = currentStatus === 'Blocked' ? 'Active' : 'Blocked';
-    const msg = currentStatus === 'Blocked' ? 'Unblock this user?' : 'Block this user? They will not be able to access their dashboard.';
-    
-    if(!confirm(msg)) return;
-
-    try {
-        await updateDoc(doc(db, "shops", shopId), {
-            status: newStatus
-        });
-    } catch(err) {
-        alert("Error changing status: " + err.message);
+window.removePremium = async (shopId) => {
+    if(confirm("क्या आप इसे वापस Free Plan में डालना चाहते हैं?")) {
+        await updateDoc(doc(db, "khata_shops", shopId), { isPremium: false });
     }
 };
 
-window.deleteShop = async (shopId, shopName) => {
-    if(!confirm(`WARNING: Are you sure you want to PERMANENTLY DELETE the database record for "${shopName}"?`)) return;
-    
-    try {
-        await deleteDoc(doc(db, "shops", shopId));
-        alert("Shop database record deleted successfully.");
-    } catch(err) {
-        alert("Error deleting shop: " + err.message);
+window.toggleBlock = async (shopId, blockStatus) => {
+    const action = blockStatus ? "BLOCK" : "UNBLOCK";
+    if(confirm(`क्या आप इस दुकानदार का अकाउंट ${action} करना चाहते हैं?`)) {
+        await updateDoc(doc(db, "khata_shops", shopId), { isBlocked: blockStatus });
     }
 };
-              
+
+window.deleteShop = async (shopId) => {
+    if(confirm("⚠️ चेतावनी: क्या आप इस अकाउंट को हमेशा के लिए डिलीट करना चाहते हैं?")) {
+        await deleteDoc(doc(db, "khata_shops", shopId));
+    }
+};
+                                                                                                                                                                     
