@@ -99,7 +99,6 @@ const renderCustomers = (customers) => {
             amountHtml = `<span style="color:#6b7280; font-weight:bold; font-size:18px;">₹0</span><br><small style="color:#6b7280; font-weight:600;">Settled</small>`;
         }
 
-        // Handle undefined phone numbers from old data
         const displayPhone = (data.phone && data.phone !== 'undefined') ? data.phone : 'No Number';
 
         list.innerHTML += `
@@ -134,12 +133,15 @@ const updateCustomerDetailUI = (balance) => {
     const balanceEl = document.getElementById('detail-balance');
     const statusEl = document.getElementById('detail-status');
     
-    if (balance > 0) {
-        balanceEl.innerText = `₹${balance}`;
+    // Agar balance purane system ki wajah se undefined ho, toh 0 maan lein
+    const safeBalance = balance || 0; 
+
+    if (safeBalance > 0) {
+        balanceEl.innerText = `₹${safeBalance}`;
         balanceEl.style.color = "#ef4444";
         statusEl.innerText = "To Collect (Due)";
-    } else if (balance < 0) {
-        balanceEl.innerText = `₹${Math.abs(balance)}`;
+    } else if (safeBalance < 0) {
+        balanceEl.innerText = `₹${Math.abs(safeBalance)}`;
         balanceEl.style.color = "#10b981";
         statusEl.innerText = "Advance Received (ADV)";
     } else {
@@ -167,23 +169,31 @@ document.getElementById('btn-receive-payment').addEventListener('click', () => {
     document.getElementById('transaction-modal').classList.remove('hidden');
 });
 
+// FIXED: Robust Transaction Saving Logic with Proper Error Catching
 document.getElementById('save-trx-btn').addEventListener('click', async () => {
-    const amount = Number(document.getElementById('trx-amount').value);
-    const note = document.getElementById('trx-note').value;
-
-    if (!amount || amount <= 0) { alert("Please enter a valid amount!"); return; }
-
-    const customer = allCustomers.find(c => c.id === currentCustomerId);
-    let newBalance = customer.balance || 0;
-
-    if (currentTrxType === 'credit') {
-        newBalance += amount;
-    } else {
-        newBalance -= amount;
-    }
-
     try {
-        await addDoc(collection(db, `customers/${currentCustomerId}/transactions`), {
+        const amount = Number(document.getElementById('trx-amount').value);
+        const note = document.getElementById('trx-note').value;
+
+        if (!amount || amount <= 0) { alert("Please enter a valid amount!"); return; }
+
+        if (!currentCustomerId) { alert("Error: Customer ID missing!"); return; }
+
+        const customer = allCustomers.find(c => c.id === currentCustomerId);
+        if (!customer) { alert("Error: Customer data not found!"); return; }
+
+        let newBalance = customer.balance || 0;
+
+        if (currentTrxType === 'credit') {
+            newBalance += amount;
+        } else {
+            newBalance -= amount;
+        }
+
+        // Safe explicit path format for subcollections
+        const trxCollection = collection(db, "customers", currentCustomerId, "transactions");
+        
+        await addDoc(trxCollection, {
             amount: amount,
             type: currentTrxType,
             note: note,
@@ -195,11 +205,16 @@ document.getElementById('save-trx-btn').addEventListener('click', async () => {
         });
 
         closeTrxModal();
-    } catch (err) { alert("Error saving transaction!"); }
+        
+    } catch (err) { 
+        console.error("Save Trx Error:", err);
+        // Ab yahan par actual error reason likha aayega
+        alert("Transaction Failed! Reason: " + err.message); 
+    }
 });
 
 const loadTransactions = (custId) => {
-    const q = query(collection(db, `customers/${custId}/transactions`), orderBy("date", "desc"));
+    const q = query(collection(db, "customers", custId, "transactions"), orderBy("date", "desc"));
     
     if (trxUnsubscribe) trxUnsubscribe(); 
 
@@ -234,6 +249,10 @@ const loadTransactions = (custId) => {
                 </div>
             `;
         });
+    }, (error) => {
+        console.error("Load Trx Error:", error);
+        // Agar history load hone mein error aayi toh ye alert aayega
+        alert("Error loading history: " + error.message);
     });
 };
 
@@ -257,7 +276,7 @@ document.getElementById('save-cust-btn').addEventListener('click', async () => {
         closeModal();
         document.getElementById('cust-name').value = '';
         document.getElementById('cust-phone').value = '';
-    } catch (e) { alert("Error adding customer!"); }
+    } catch (e) { alert("Error adding customer: " + e.message); }
 });
 
 // --- Search & Load Customers Logic ---
@@ -303,4 +322,4 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-            
+        
