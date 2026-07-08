@@ -18,7 +18,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ==================== SUPER ADMIN CREDENTIALS ====================
-const MASTER_ADMIN_EMAIL = "admin@khata.com"; // इसी ईमेल से एडमिन लॉगिन होगा
+const MASTER_ADMIN_EMAIL = "admin@khatapro.com"; // इसी ईमेल से एडमिन लॉगिन होगा
 
 // ==================== DOM ELEMENTS ====================
 const loginScreen = document.getElementById('admin-login-section');
