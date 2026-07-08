@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- Firebase Config ---
 const firebaseConfig = {
@@ -58,6 +58,23 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 });
 
 // --- Customer Logic ---
+const loadCustomers = (uid) => {
+    const q = query(collection(db, "customers"), where("shopId", "==", uid));
+    onSnapshot(q, (snapshot) => {
+        const list = document.getElementById('customer-list');
+        list.innerHTML = ''; 
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            list.innerHTML += `
+                <div class="cust-item" style="background:white; color:black; padding:15px; margin:10px 0; border-radius:10px; display:flex; justify-content:space-between;">
+                    <span>${data.name}</span>
+                    <span style="font-weight:bold; color:#e11d48;">₹${data.due}</span>
+                </div>
+            `;
+        });
+    });
+};
+
 document.getElementById('add-cust-btn').addEventListener('click', openModal);
 
 document.getElementById('save-cust-btn').addEventListener('click', async () => {
@@ -91,6 +108,7 @@ onAuthStateChanged(auth, async (user) => {
         if (shopDoc.exists()) {
             document.getElementById('shop-name-display').innerText = shopDoc.data().shopName;
         }
+        loadCustomers(user.uid);
     } else {
         document.getElementById('dashboard-section').classList.add('hidden');
         document.getElementById('login-section').classList.remove('hidden');
