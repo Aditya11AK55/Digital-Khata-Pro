@@ -1,3 +1,4 @@
+/* जनरल सेटिंग्स */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
@@ -6,11 +7,12 @@ body {
     justify-content: center;
     align-items: center;
     /* प्रोफेशनल ग्रेडिएंट बैकग्राउंड */
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
 }
 
 .main-container { width: 90%; max-width: 400px; }
 
+/* लॉगिन और साइनअप कार्ड */
 .auth-card {
     background: rgba(255, 255, 255, 0.95);
     padding: 30px;
@@ -19,30 +21,50 @@ body {
     text-align: center;
 }
 
-h2 { color: #333; margin-bottom: 10px; }
-p { color: #666; margin-bottom: 20px; font-size: 14px; }
+h2 { color: #1f2937; margin-bottom: 10px; }
+p { color: #6b7280; margin-bottom: 20px; font-size: 14px; }
 
 input {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
     outline: none;
 }
 
 .primary-btn {
     width: 100%;
-    padding: 12px;
-    background: #764ba2;
+    padding: 14px;
+    background: #4f46e5;
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .toggle-link { margin-top: 15px; cursor: pointer; font-size: 13px; }
-.toggle-link span { color: #764ba2; font-weight: bold; }
-
+.toggle-link span { color: #4f46e5; font-weight: bold; }
 .hidden { display: none; }
+
+/* डैशबोर्ड स्टाइल */
+#dashboard-section { color: white; }
+header { display: flex; justify-content: space-between; padding: 10px 0 20px 0; align-items: center; }
+#logout-btn { background: #ef4444; border: none; padding: 5px 15px; color: white; border-radius: 6px; cursor: pointer; }
+
+.stats-container { display: flex; gap: 10px; margin-bottom: 20px; }
+.stat-card { 
+    flex: 1; background: rgba(255,255,255,0.15); padding: 15px; 
+    border-radius: 15px; text-align: center; backdrop-filter: blur(10px);
+}
+.stat-card h2 { font-size: 18px; color: white; margin-top: 5px; }
+.stat-card p { color: #e0e7ff; margin-bottom: 0; font-size: 12px; }
+
+#search-customer { width: 100%; padding: 12px; border-radius: 10px; border: none; margin-bottom: 15px; }
+
+.fab { 
+    position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+    background: #10b981; color: white; border-radius: 50%; font-size: 30px; 
+    border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;
+}
