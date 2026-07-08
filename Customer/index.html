@@ -54,7 +54,10 @@
 
             <input type="text" id="search-customer" placeholder="Search customer...">
             
-            <h4 class="section-title">Your Customers</h4>
+            <div class="section-header-box">
+                <h4>Your Customers</h4>
+            </div>
+
             <div id="customer-list">
                 </div>
 
@@ -65,7 +68,8 @@
             <header class="detail-header">
                 <button id="back-btn" class="icon-btn">⬅ Back</button>
                 <h3 id="detail-cust-name">Customer Name</h3>
-                <div style="width: 50px;"></div> </header>
+                <div style="width: 50px;"></div>
+            </header>
 
             <div class="big-balance-card">
                 <p>Total Balance</p>
@@ -74,11 +78,13 @@
             </div>
 
             <div class="action-buttons">
-                <button id="btn-give-credit" class="danger-btn">उधार दें</button>
-                <button id="btn-receive-payment" class="success-btn">पैसे जमा करें</button>
+                <button id="btn-give-credit" class="danger-btn">Give Credit</button>
+                <button id="btn-receive-payment" class="success-btn">Receive Payment</button>
             </div>
 
-            <h4 class="section-title">Your Transaction History</h4>
+            <div class="section-header-box" style="margin-bottom: 10px;">
+                <h4>Transaction History</h4>
+            </div>
             <div id="transaction-list">
                 </div>
         </div>
