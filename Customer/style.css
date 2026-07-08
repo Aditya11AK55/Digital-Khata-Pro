@@ -2,22 +2,26 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 30px 15px;
 }
 
 .main-container { width: 90%; max-width: 400px; }
 
 /* Auth Cards */
+/* Login/Signup me content kam hota hai, isliye inhe thoda neeche
+   se margin dekar visually center jaisa banaya, taaki khali jagah na dikhe */
 .auth-card {
     background: rgba(255, 255, 255, 0.95);
     padding: 30px;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     text-align: center;
+    margin-top: 15vh;
 }
 
 h2 { color: #1f2937; margin-bottom: 10px; }
