@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, collection, updateDoc, deleteDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// --- Firebase Config (Same as app.js) ---
+// --- Firebase Config ---
 const firebaseConfig = {
     apiKey: "AIzaSyCzsLxPKdhRpdiy-5tUfDaoyDJzhXP8Kj8",
     authDomain: "digitalkhatapro-b0400.firebaseapp.com",
@@ -33,12 +33,12 @@ document.getElementById('admin-logout-btn').addEventListener('click', () => {
     signOut(auth);
 });
 
-// --- Auth State Change (Check if Admin logged in) ---
+// --- Auth State Change ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('admin-login-section').classList.add('hidden');
         document.getElementById('admin-dashboard-section').classList.remove('hidden');
-        loadAdminData(); // Load all tables and stats
+        loadAdminData(); 
     } else {
         document.getElementById('admin-dashboard-section').classList.add('hidden');
         document.getElementById('admin-login-section').classList.remove('hidden');
@@ -77,7 +77,7 @@ const loadAdminData = () => {
         });
     });
 
-    // 2. Load All Shops Data (Updated to display registered Email)
+    // 2. Load All Shops Data
     const qShops = collection(db, "shops");
     onSnapshot(qShops, (snapshot) => {
         const shopsList = document.getElementById('shops-list');
@@ -88,7 +88,6 @@ const loadAdminData = () => {
 
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            
             if (data.plan !== 'Free') premiumUsers++;
             
             const dateStr = data.joinDate && data.joinDate.toDate ? data.joinDate.toDate().toLocaleDateString('en-IN') : 'N/A';
@@ -97,7 +96,6 @@ const loadAdminData = () => {
             const blockActionText = data.status === 'Blocked' ? 'Unblock' : 'Block';
             const blockActionClass = data.status === 'Blocked' ? 'btn-success' : 'btn-warning';
             
-            // Show phone along with email for more details
             const displayContact = `${data.phone}<br><small style="color:#6b7280;">${data.email || 'No Email'}</small>`;
 
             shopsList.innerHTML += `
@@ -115,13 +113,12 @@ const loadAdminData = () => {
             `;
         });
 
-        // Update Top Stats
         document.getElementById('total-shops-count').innerText = totalShops;
         document.getElementById('premium-users-count').innerText = premiumUsers;
     });
 };
 
-// --- Action Functions ---
+// --- Action Functions (Updated with New Plans) ---
 
 window.approvePlan = async (requestId, shopId, planName) => {
     if(!confirm(`Are you sure you have received payment and want to approve ${planName}?`)) return;
@@ -129,20 +126,29 @@ window.approvePlan = async (requestId, shopId, planName) => {
     let newLimit = 100;
     let finalPlanName = 'Free';
 
-    if(planName.includes('Pro Plan') || planName.includes('399')) {
+    // New Pricing Logic
+    if(planName.includes('Starter') || planName.includes('249')) {
         newLimit = 500;
-        finalPlanName = 'Pro Plan';
-    } else if (planName.includes('Max Plan') || planName.includes('699')) {
+        finalPlanName = 'Starter Plan';
+    } else if (planName.includes('Pro') || planName.includes('499')) {
         newLimit = 1000;
-        finalPlanName = 'Max Plan';
+        finalPlanName = 'Pro Plan';
+    } else if (planName.includes('Advanced') || planName.includes('749')) {
+        newLimit = 1500;
+        finalPlanName = 'Advanced Plan';
+    } else if (planName.includes('Unlimited') || planName.includes('999')) {
+        newLimit = 9999999; // 99 Lakh limit means practically Unlimited
+        finalPlanName = 'Unlimited Plan';
     }
 
     try {
+        // Update shop plan & limit
         await updateDoc(doc(db, "shops", shopId), {
             plan: finalPlanName,
             limit: newLimit
         });
 
+        // Mark request as Approved
         await updateDoc(doc(db, "premium_requests", requestId), {
             status: "Approved"
         });
@@ -156,33 +162,21 @@ window.approvePlan = async (requestId, shopId, planName) => {
 window.toggleBlockStatus = async (shopId, currentStatus) => {
     const newStatus = currentStatus === 'Blocked' ? 'Active' : 'Blocked';
     const msg = currentStatus === 'Blocked' ? 'Unblock this user?' : 'Block this user? They will not be able to access their dashboard.';
-    
     if(!confirm(msg)) return;
 
-    try {
-        await updateDoc(doc(db, "shops", shopId), {
-            status: newStatus
-        });
-    } catch(err) {
-        alert("Error changing status: " + err.message);
-    }
+    try { await updateDoc(doc(db, "shops", shopId), { status: newStatus }); } 
+    catch(err) { alert("Error changing status: " + err.message); }
 };
 
 window.deleteShop = async (shopId, shopName, phone) => {
     if(!confirm(`WARNING: Are you sure you want to PERMANENTLY DELETE "${shopName}" from database?`)) return;
     
     try {
-        // 1. Delete main shop document
         await deleteDoc(doc(db, "shops", shopId));
-        
-        // 2. Also delete their phone mapping so they can re-register if needed
-        if(phone) {
-            await deleteDoc(doc(db, "phone_mapping", phone));
-        }
-        
+        if(phone) { await deleteDoc(doc(db, "phone_mapping", phone)); }
         alert("Shop database record deleted successfully.");
     } catch(err) {
         alert("Error deleting shop: " + err.message);
     }
 };
-               
+        
