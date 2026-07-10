@@ -11,6 +11,7 @@
 
     <div class="main-container">
         
+        <!-- Login Section -->
         <div id="login-section" class="auth-card">
             <h2>Welcome Back</h2>
             <p>Login to your account</p>
@@ -23,6 +24,7 @@
             <p class="toggle-link" onclick="showSignup()">Don't have an account? <span>Sign up here</span></p>
         </div>
 
+        <!-- Forgot Password Section -->
         <div id="forgot-password-section" class="auth-card hidden">
             <h2>Reset Password</h2>
             <p>Enter your registered email address</p>
@@ -40,6 +42,7 @@
             <p class="toggle-link" onclick="showLogin()">Back to <span>Login</span></p>
         </div>
 
+        <!-- Signup Section -->
         <div id="signup-section" class="auth-card hidden">
             <h2>Create Account</h2>
             <p>Register your new shop</p>
@@ -53,6 +56,7 @@
             <p class="toggle-link" onclick="showLogin()">Already have an account? <span>Login here</span></p>
         </div>
 
+        <!-- Blocked / Contact Support Section -->
         <div id="blocked-section" class="auth-card hidden">
             <h2 style="color: #ef4444; font-size: 24px; margin-bottom: 15px;">Access Denied</h2>
             <p style="color: #1f2937; font-weight: 500;">Your account has been temporarily disabled by the administrator.</p>
@@ -60,12 +64,13 @@
             <button id="logout-blocked-btn" class="cancel-btn">Logout</button>
         </div>
 
+        <!-- Main Dashboard Section -->
         <div id="dashboard-section" class="hidden">
             <header>
                 <h3 id="shop-name-display">My Shop</h3>
                 <div style="display: flex; gap: 10px;">
-                    <button id="change-pass-btn" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); padding: 8px 12px; color: white; border-radius: 8px; cursor: pointer; font-weight:bold; font-size: 16px; letter-spacing: 2px;" title="Change Password">•••</button>
-                    <button id="logout-btn">Logout</button>
+                    <!-- Settings Button (Three Dots) -->
+                    <button id="settings-btn" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); padding: 8px 12px; color: white; border-radius: 8px; cursor: pointer; font-weight:bold; font-size: 16px; letter-spacing: 2px;" title="Settings">•••</button>
                 </div>
             </header>
 
@@ -84,15 +89,16 @@
             
             <div class="section-header-box" style="display: flex; justify-content: space-between; align-items: center;">
                 <h4 style="margin: 0;">Your Customers</h4>
-                <small id="plan-info" style="color: #10b981; font-weight: bold; font-size: 11px; background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 6px;">Free Plan</small>
             </div>
 
             <div id="customer-list">
-                </div>
+                <!-- Customer items will render here -->
+            </div>
 
             <button id="add-cust-btn" class="fab">+</button>
         </div>
 
+        <!-- Customer Detail & Transaction Section -->
         <div id="customer-detail-section" class="hidden">
             <header class="detail-header">
                 <button id="back-btn" class="icon-btn">⬅ Back</button>
@@ -106,18 +112,28 @@
                 <p id="detail-status"></p>
             </div>
 
+            <!-- Primary Actions -->
             <div class="action-buttons">
                 <button id="btn-give-credit" class="danger-btn">Give Credit</button>
                 <button id="btn-receive-payment" class="success-btn">Receive Payment</button>
             </div>
+            
+            <!-- Secondary Actions: Edit & WhatsApp -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="btn-edit-cust" style="flex: 1; background: #e5e7eb; color:#374151; border:none; padding:10px; border-radius:8px; font-weight:600; cursor: pointer;">✏️ Edit</button>
+                <button id="btn-whatsapp-share" style="flex: 1; background: #25D366; color:white; border:none; padding:10px; border-radius:8px; font-weight:600; cursor: pointer;">💬 WhatsApp</button>
+            </div>
 
-            <div class="section-header-box" style="margin-bottom: 10px;">
-                <h4>Transaction History</h4>
+            <div class="section-header-box" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin: 0;">Transaction History</h4>
+                <small id="toggle-hidden-trx" style="color: #4f46e5; cursor: pointer; font-weight: 600; text-decoration: underline;">Show Hidden</small>
             </div>
             <div id="transaction-list">
-                </div>
+                <!-- Transactions will render here -->
+            </div>
         </div>
 
+        <!-- Add Customer Modal -->
         <div id="add-customer-modal" class="hidden modal">
             <div class="modal-content">
                 <h3>Add New Customer</h3>
@@ -128,6 +144,18 @@
             </div>
         </div>
 
+        <!-- Edit Customer Modal -->
+        <div id="edit-customer-modal" class="hidden modal">
+            <div class="modal-content">
+                <h3>Edit Customer</h3>
+                <input type="text" id="edit-cust-name" placeholder="Customer Name" required>
+                <input type="tel" id="edit-cust-phone" placeholder="Mobile Number" required>
+                <button id="save-edit-btn" class="primary-btn">Save Changes</button>
+                <button onclick="document.getElementById('edit-customer-modal').classList.add('hidden')" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Add Transaction Modal -->
         <div id="transaction-modal" class="hidden modal">
             <div class="modal-content">
                 <h3 id="trx-modal-title">Transaction</h3>
@@ -138,6 +166,21 @@
             </div>
         </div>
 
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="hidden modal">
+            <div class="modal-content" style="text-align: center;">
+                <h3>Shop Settings</h3>
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <p style="color: #6b7280; font-size: 13px; margin-bottom: 5px;">Active Plan</p>
+                    <h4 id="modal-plan-info" style="color: #10b981; margin: 0; font-size: 18px;">Free Plan</h4>
+                </div>
+                <button id="change-pass-modal-btn" class="primary-btn" style="background: #4f46e5; margin-bottom: 10px;">Change Password</button>
+                <button id="logout-btn" class="primary-btn" style="background: #ef4444; margin-bottom: 10px;">Logout</button>
+                <button onclick="document.getElementById('settings-modal').classList.add('hidden')" class="cancel-btn">Close</button>
+            </div>
+        </div>
+
+        <!-- Premium Paywall Modal (Updated Prices) -->
         <div id="premium-modal" class="hidden modal">
             <div class="modal-content" style="max-width: 380px; padding: 30px 20px;">
                 <h2 style="color: #7c3aed; margin-bottom: 10px; font-size: 22px;">Upgrade to Premium 🚀</h2>
@@ -146,14 +189,25 @@
                 </p>
                 
                 <div style="display: flex; flex-direction: column; gap: 15px;">
-                    <button id="btn-plan-399" class="primary-btn" style="background: #10b981; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 400;"><strong>Pro Plan</strong> (Up to 500)</span>
-                        <span style="font-size: 18px; font-weight: bold;">₹399</span>
+                    <button id="btn-plan-249" class="primary-btn" style="background: #10b981; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 400;"><strong>Starter Plan</strong> (Up to 500)</span>
+                        <span style="font-size: 18px; font-weight: bold;">₹249</span>
                     </button>
                     
-                    <button id="btn-plan-699" class="primary-btn" style="background: #4f46e5; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 400;"><strong>Max Plan</strong> (Up to 1000)</span>
-                        <span style="font-size: 18px; font-weight: bold;">₹699</span>
+                    <button id="btn-plan-499" class="primary-btn" style="background: #3b82f6; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 400;"><strong>Pro Plan</strong> (Up to 1000)</span>
+                        <span style="font-size: 18px; font-weight: bold;">₹499</span>
+                    </button>
+
+                    <button id="btn-plan-749" class="primary-btn" style="background: #8b5cf6; text-align: left; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 400;"><strong>Advanced Plan</strong> (Up to 1500)</span>
+                        <span style="font-size: 18px; font-weight: bold;">₹749</span>
+                    </button>
+
+                    <!-- Highlighted Unlimited Plan -->
+                    <button id="btn-plan-999" class="primary-btn" style="background: #4f46e5; border: 2px solid #fbbf24; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); text-align: left; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 400;"><strong>Unlimited Plan</strong> (No Limit)</span>
+                        <span style="font-size: 18px; font-weight: bold; color: #fbbf24;">₹999</span>
                     </button>
                 </div>
                 
@@ -161,6 +215,7 @@
             </div>
         </div>
 
+        <!-- Change Password Modal -->
         <div id="change-password-modal" class="hidden modal">
             <div class="modal-content">
                 <h3>Change Password</h3>
@@ -174,5 +229,5 @@
 
     <script src="app.js" type="module"></script>
 </body>
-            </html>
-            
+    </html>
+                    
