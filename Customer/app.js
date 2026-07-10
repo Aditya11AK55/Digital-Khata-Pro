@@ -18,11 +18,11 @@ const db = getFirestore(app);
 let allCustomers = [];
 let currentCustomerId = null;
 let currentTrxType = null;
-let showHidden = false; // Toggle for hidden transactions
+let showHidden = false;
 let trxUnsubscribe = null;
 let currentShopData = null;
 
-// --- Helper Functions ---
+// --- UI Toggles ---
 window.showSignup = () => { document.getElementById('login-section').classList.add('hidden'); document.getElementById('signup-section').classList.remove('hidden'); };
 window.showLogin = () => { document.getElementById('signup-section').classList.add('hidden'); document.getElementById('forgot-password-section').classList.add('hidden'); document.getElementById('login-section').classList.remove('hidden'); };
 window.showForgotPassword = () => { document.getElementById('login-section').classList.add('hidden'); document.getElementById('forgot-password-section').classList.remove('hidden'); };
@@ -31,14 +31,43 @@ window.closeTrxModal = () => document.getElementById('transaction-modal').classL
 window.closePremiumModal = () => document.getElementById('premium-modal').classList.add('hidden');
 window.closeChangePasswordModal = () => document.getElementById('change-password-modal').classList.add('hidden');
 
-// --- WhatsApp Share ---
-document.getElementById('btn-whatsapp-share').addEventListener('click', () => {
-    const cust = allCustomers.find(c => c.id === currentCustomerId);
-    const msg = `Namaste ${cust.name}, your total balance in Digital Khata is ₹${cust.balance}. Please clear it soon.`;
-    window.open(`https://wa.me/91${cust.phone}?text=${encodeURIComponent(msg)}`);
+// --- Auth ---
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+        const userCred = await createUserWithEmailAndPassword(auth, document.getElementById('signup-email').value, document.getElementById('signup-password').value);
+        await setDoc(doc(db, "shops", userCred.user.uid), { shopName: document.getElementById('signup-shop').value, phone: document.getElementById('signup-phone').value, email: document.getElementById('signup-email').value, plan: 'Free', limit: 100, status: 'Active', joinDate: new Date() });
+        await setDoc(doc(db, "phone_mapping", document.getElementById('signup-phone').value), { email: document.getElementById('signup-email').value });
+        alert("Account Created!"); showLogin();
+    } catch (err) { alert(err.message); }
 });
 
-// --- Edit Customer ---
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+        const mapping = await getDoc(doc(db, "phone_mapping", document.getElementById('login-phone').value));
+        if(mapping.exists()) await signInWithEmailAndPassword(auth, mapping.data().email, document.getElementById('login-password').value);
+        else alert("Mobile not registered!");
+    } catch (err) { alert("Invalid credentials!"); }
+});
+
+// --- Customer Logic ---
+document.getElementById('save-cust-btn').addEventListener('click', async () => {
+    await addDoc(collection(db, "customers"), { shopId: auth.currentUser.uid, name: document.getElementById('cust-name').value, phone: document.getElementById('cust-phone').value, balance: 0, date: new Date() });
+    closeModal();
+});
+
+window.openCustomerDetail = (id) => {
+    currentCustomerId = id;
+    const cust = allCustomers.find(c => c.id === id);
+    document.getElementById('dashboard-section').classList.add('hidden');
+    document.getElementById('customer-detail-section').classList.remove('hidden');
+    document.getElementById('detail-cust-name').innerText = cust.name;
+    updateCustomerDetailUI(cust.balance);
+    loadTransactions(id);
+};
+
+// --- Features ---
 document.getElementById('btn-edit-cust').addEventListener('click', () => {
     const cust = allCustomers.find(c => c.id === currentCustomerId);
     document.getElementById('edit-cust-name').value = cust.name;
@@ -47,77 +76,60 @@ document.getElementById('btn-edit-cust').addEventListener('click', () => {
 });
 
 document.getElementById('save-edit-btn').addEventListener('click', async () => {
-    await updateDoc(doc(db, "customers", currentCustomerId), { 
-        name: document.getElementById('edit-cust-name').value, 
-        phone: document.getElementById('edit-cust-phone').value 
-    });
+    await updateDoc(doc(db, "customers", currentCustomerId), { name: document.getElementById('edit-cust-name').value, phone: document.getElementById('edit-cust-phone').value });
     document.getElementById('edit-customer-modal').classList.add('hidden');
 });
 
-// --- Hide Transaction Logic ---
+document.getElementById('btn-whatsapp-share').addEventListener('click', () => {
+    const cust = allCustomers.find(c => c.id === currentCustomerId);
+    window.open(`https://wa.me/91${cust.phone}?text=Hello ${cust.name}, your balance is ₹${cust.balance}. Please clear it.`);
+});
+
 window.toggleHidden = async (trxId, currentBalance, trxAmount, type) => {
-    if(!confirm("Hide this transaction?")) return;
-    
-    // Reverse balance logic
-    let adjustment = (type === 'credit') ? -trxAmount : trxAmount;
-    await updateDoc(doc(db, "customers", currentCustomerId), { balance: currentBalance + adjustment });
+    if(!confirm("Hide transaction?")) return;
+    let adj = (type === 'credit') ? -trxAmount : trxAmount;
+    await updateDoc(doc(db, "customers", currentCustomerId), { balance: currentBalance + adj });
     await updateDoc(doc(db, "customers", currentCustomerId, "transactions", trxId), { hidden: true });
 };
 
-// --- Updated Premium Request Handling ---
-const requestPremiumPlan = async (planName, price) => {
-    await addDoc(collection(db, "premium_requests"), {
-        shopId: auth.currentUser.uid, shopName: currentShopData.shopName, phone: currentShopData.phone,
-        requestedPlan: planName, price: price, requestDate: new Date(), status: "Pending"
-    });
-    alert("Request sent! Support will contact you shortly.");
-    window.closePremiumModal();
-};
-
-document.getElementById('btn-plan-249').addEventListener('click', () => requestPremiumPlan('Starter Plan (500)', 249));
-document.getElementById('btn-plan-499').addEventListener('click', () => requestPremiumPlan('Pro Plan (1000)', 499));
-document.getElementById('btn-plan-749').addEventListener('click', () => requestPremiumPlan('Advanced Plan (1500)', 749));
-document.getElementById('btn-plan-999').addEventListener('click', () => requestPremiumPlan('Unlimited Plan', 999));
-
-// --- Transactions Listener ---
-const loadTransactions = (custId) => {
-    const q = query(collection(db, "customers", custId, "transactions"), orderBy("date", "desc"));
-    if (trxUnsubscribe) trxUnsubscribe();
-    trxUnsubscribe = onSnapshot(q, (snapshot) => {
-        const list = document.getElementById('transaction-list');
+// --- Data Loading ---
+const loadCustomers = (uid) => {
+    onSnapshot(query(collection(db, "customers"), where("shopId", "==", uid)), (snap) => {
+        allCustomers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const list = document.getElementById('customer-list');
         list.innerHTML = '';
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            if (data.hidden && !showHidden) return;
-            
-            const color = data.type === 'credit' ? '#ef4444' : '#10b981';
-            list.innerHTML += `
-                <div class="trx-item" style="opacity: ${data.hidden ? 0.5 : 1}">
-                    <strong>${data.type === 'credit' ? 'Credit' : 'Payment'}</strong>
-                    <div style="color:${color}">${data.type === 'credit' ? '+' : '-'}₹${data.amount}</div>
-                    ${!data.hidden ? `<button onclick="toggleHidden('${doc.id}', ${allCustomers.find(c=>c.id==custId).balance}, ${data.amount}, '${data.type}')">Hide</button>` : ''}
-                </div>`;
+        allCustomers.forEach(c => {
+            list.innerHTML += `<div class="cust-item" onclick="openCustomerDetail('${c.id}')"><strong>${c.name}</strong><p>${c.phone}</p><span>₹${c.balance}</span></div>`;
         });
     });
 };
 
-document.getElementById('toggle-hidden-trx').addEventListener('click', () => {
-    showHidden = !showHidden;
-    document.getElementById('toggle-hidden-trx').innerText = showHidden ? "Hide Cancelled" : "Show Hidden";
-    loadTransactions(currentCustomerId);
+const loadTransactions = (custId) => {
+    const q = query(collection(db, "customers", custId, "transactions"), orderBy("date", "desc"));
+    if (trxUnsubscribe) trxUnsubscribe();
+    trxUnsubscribe = onSnapshot(q, (snap) => {
+        const list = document.getElementById('transaction-list');
+        list.innerHTML = '';
+        snap.forEach((doc) => {
+            const d = doc.data();
+            if (d.hidden && !showHidden) return;
+            list.innerHTML += `<div class="trx-item" style="opacity:${d.hidden ? 0.5 : 1}"><strong>${d.type}</strong><div>${d.type=='credit'?'+':'-'}₹${d.amount}</div>${!d.hidden ? `<button onclick="toggleHidden('${doc.id}', ${allCustomers.find(c=>c.id==custId).balance}, ${d.amount}, '${d.type}')">Hide</button>` : ''}</div>`;
+        });
+    });
+};
+
+// --- Initializer ---
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        onSnapshot(doc(db, "shops", user.uid), (snap) => {
+            currentShopData = snap.data();
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            loadCustomers(user.uid);
+        });
+    } else {
+        document.getElementById('dashboard-section').classList.add('hidden');
+        document.getElementById('login-section').classList.remove('hidden');
+    }
 });
 
-// --- Settings & Auth Logic ---
-document.getElementById('settings-btn').addEventListener('click', () => {
-    document.getElementById('modal-plan-info').innerText = currentShopData.plan + " Plan";
-    document.getElementById('settings-modal').classList.remove('hidden');
-});
-
-document.getElementById('change-pass-modal-btn').addEventListener('click', () => {
-    document.getElementById('settings-modal').classList.add('hidden');
-    document.getElementById('change-password-modal').classList.remove('hidden');
-});
-
-// [ बाकी का Auth और Customer Logic पिछले कोड जैसा ही है... ]
-// सुनिश्चित करें कि आप पिछले कोड का पूरा हिस्सा यहाँ जोड़ लें। 
-        
+document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
